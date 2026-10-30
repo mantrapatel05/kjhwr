@@ -167,7 +167,6 @@ def fetch_fuelhh(session: requests.Session) -> tuple[list[dict], dict]:
     return rows, meta
 
 
-# ---------------------------------------------------------------- inspection
 
 
 def minute_of(ts: str | None) -> str | None:
@@ -233,7 +232,6 @@ def inspect(window_rows: dict, fuelhh_raw: list[dict], windfor_norm: list[dict],
     return report
 
 
-# ---------------------------------------------------------------- normalise
 
 
 def normalise_windfor(rows: list[dict]) -> tuple[list[dict], dict]:
@@ -277,7 +275,6 @@ def normalise_fuelhh(rows: list[dict]) -> tuple[list[dict], dict]:
     return out, {"rows_raw": len(rows), "non_wind_discarded": non_wind, "rows_snapshot": len(out)}
 
 
-# ---------------------------------------------------------------- write
 
 
 def write_jsonl_gz(path: Path, records: list[dict]) -> None:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Constants: window dates, default cutoff. All times UTC (UK = GMT in January)."""
 
 WINDOW_DECISION_DATES = {"from": "2026-01-01", "to": "2026-01-31"}
