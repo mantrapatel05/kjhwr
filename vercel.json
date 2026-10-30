@@ -1,13 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "builds": [
-    {
-      "src": "api/app.py",
-      "use": "@vercel/python",
-      "config": { "maxDuration": 10 }
+  "services": {
+    "api": {
+      "root": "api",
+      "framework": "fastapi",
+      "entrypoint": "app.py"
     }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "api/app.py" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "api" } }
   ]
 }
