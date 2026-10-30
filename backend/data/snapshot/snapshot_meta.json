@@ -1,0 +1,109 @@
+{
+  "fetched_at_utc": "2026-10-30T17:34:01Z",
+  "base_url": "https://data.elexon.co.uk/bmrs/api/v1",
+  "windows": {
+    "windfor_publish": {
+      "from": "2025-12-28T00:00:00Z",
+      "to": "2026-02-01T00:00:00Z"
+    },
+    "fuelhh_settlement": {
+      "from": "2026-01-01",
+      "to": "2026-02-02"
+    }
+  },
+  "row_counts": {
+    "windfor_raw": {
+      "rows_raw": 20440,
+      "rows_snapshot": 20440,
+      "conflicting_duplicates": 0
+    },
+    "fuelhh_raw": {
+      "rows_raw": 1584,
+      "non_wind_discarded": 0,
+      "rows_snapshot": 1584
+    }
+  },
+  "datasets": [
+    {
+      "dataset": "WINDFOR",
+      "url": "https://data.elexon.co.uk/bmrs/api/v1/datasets/WINDFOR/stream",
+      "chunks": [
+        {
+          "file": "windfor_01.json",
+          "publishDateTimeFrom": "2025-12-28T00:00:00Z",
+          "publishDateTimeTo": "2026-01-04T00:00:00Z",
+          "rows": 4088
+        },
+        {
+          "file": "windfor_02.json",
+          "publishDateTimeFrom": "2026-01-04T00:00:00Z",
+          "publishDateTimeTo": "2026-01-11T00:00:00Z",
+          "rows": 4088
+        },
+        {
+          "file": "windfor_03.json",
+          "publishDateTimeFrom": "2026-01-11T00:00:00Z",
+          "publishDateTimeTo": "2026-01-18T00:00:00Z",
+          "rows": 4088
+        },
+        {
+          "file": "windfor_04.json",
+          "publishDateTimeFrom": "2026-01-18T00:00:00Z",
+          "publishDateTimeTo": "2026-01-25T00:00:00Z",
+          "rows": 4088
+        },
+        {
+          "file": "windfor_05.json",
+          "publishDateTimeFrom": "2026-01-25T00:00:00Z",
+          "publishDateTimeTo": "2026-02-01T00:00:00Z",
+          "rows": 4088
+        }
+      ]
+    },
+    {
+      "dataset": "FUELHH",
+      "url": "https://data.elexon.co.uk/bmrs/api/v1/datasets/FUELHH/stream",
+      "chunks": [
+        {
+          "file": "fuelhh_01.json",
+          "settlementDateFrom": "2026-01-01",
+          "settlementDateTo": "2026-01-07",
+          "fuelType": "WIND",
+          "rows": 336
+        },
+        {
+          "file": "fuelhh_02.json",
+          "settlementDateFrom": "2026-01-08",
+          "settlementDateTo": "2026-01-14",
+          "fuelType": "WIND",
+          "rows": 336
+        },
+        {
+          "file": "fuelhh_03.json",
+          "settlementDateFrom": "2026-01-15",
+          "settlementDateTo": "2026-01-21",
+          "fuelType": "WIND",
+          "rows": 336
+        },
+        {
+          "file": "fuelhh_04.json",
+          "settlementDateFrom": "2026-01-22",
+          "settlementDateTo": "2026-01-28",
+          "fuelType": "WIND",
+          "rows": 336
+        },
+        {
+          "file": "fuelhh_05.json",
+          "settlementDateFrom": "2026-01-29",
+          "settlementDateTo": "2026-02-02",
+          "fuelType": "WIND",
+          "rows": 240
+        }
+      ]
+    }
+  ],
+  "snapshot_files": [
+    "windfor.json.gz",
+    "fuelhh.json.gz"
+  ]
+}

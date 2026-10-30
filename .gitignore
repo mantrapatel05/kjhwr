@@ -1,0 +1,23 @@
+# Planning pack — not part of the product, never published
+context/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+
+# Environment & editor
+.env
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Time log (personal, see ground rule 6 in context pack)
+hours_log*
