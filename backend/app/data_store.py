@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""In-memory snapshot store (file 05). The ONLY module that reads the snapshot.
+"""In-memory snapshot store. The ONLY module that reads the snapshot.
 
 The deployed app never calls Elexon at request time — it serves the frozen
-January-2026 snapshot committed in data/snapshot/ (file 02 §4). Loads fail fast
-with a clear message if snapshot files are missing or malformed. The env var
-SNAPSHOT_DIR overrides the default directory (the API contract tests use it to
-point at a tiny fixture snapshot).
+January-2026 snapshot committed in data/snapshot/. Loads fail fast with a clear
+message if snapshot files are missing or malformed. The env var SNAPSHOT_DIR
+overrides the default directory (the contract tests use it to point at a tiny
+fixture snapshot).
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from pathlib import Path
 from . import config
 
 WINDFOR_FILE = "windfor.json.gz"
-FUELHH_FILE = "fuelhh_wind.json.gz"  # spec file name; WIND-only by construction
+FUELHH_FILE = "fuelhh_wind.json.gz"  # WIND-only rows (filtered at fetch time)
 
 
 def _snapshot_dir(override: Path | str | None) -> Path:
@@ -33,7 +33,6 @@ def _read_jsonl_gz(path: Path) -> list[dict]:
         with gzip.open(path, "rt", encoding="utf-8") as fh:
             return [json.loads(line) for line in fh if line.strip()]
     except (gzip.BadGzipFile, json.JSONDecodeError, UnicodeDecodeError) as exc:
-        # Fail fast with a clear message, per file: load and validate ONCE at startup.
         raise ValueError(f"malformed snapshot file {path.name}: {exc}") from exc
 
 
@@ -50,11 +49,11 @@ def load_snapshot(data_dir: Path | str | None = None) -> dict:
     """Return {'forecasts', 'actuals', 'meta'} from the snapshot. Misspelled or
     truncated files raise immediately — never load half a snapshot.
 
-    Normalised shapes (file 05 §3):
+    Normalised shapes:
       forecasts: {"start_time", "publish_time", "generation"}   (all WINDFOR versions,
                  nulls kept as None — missing stays missing, never filled)
-      actuals:   {"start_time", "generation"}                   (WIND only, enforced in
-                 the fetch script's normalise_fuelhh; fuelType verified 100% WIND)
+      actuals:   {"start_time", "generation"}                   (WIND only, WIND-ness
+                 verified 100% in the fetch script)
     """
     directory = _snapshot_dir(data_dir)
 
@@ -77,7 +76,6 @@ def load_snapshot(data_dir: Path | str | None = None) -> dict:
     meta_path = directory / "snapshot_meta.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
 
-    # Nowhere else to honestly say this: the snapshot is the data this app presents.
     return {"forecasts": forecasts, "actuals": actuals, "meta": meta}
 
 

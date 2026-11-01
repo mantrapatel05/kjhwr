@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Core as-of forecast selection and matching (file 03).
+"""Core as-of forecast selection and matching. PURE: no I/O, no FastAPI imports.
 
-PURE module: no file/network I/O, no FastAPI imports. Tests (file 07) pin every rule.
-The leakage rule lives here and is non-negotiable: a forecast published after the
-decision cutoff may never influence anything downstream.
+The leakage rule lives here and is non-negotiable: a forecast published after
+the decision cutoff may never influence anything downstream.
 
-Vocabulary (file 03 §1):
+Vocabulary:
 - delivery interval: the time a forecast is ABOUT (startTime)
 - publish time: when a forecast VERSION became known (publishTime)
 - decision cutoff: the timestamp the purchase decision is made
 - eligible forecast: publishTime <= cutoff (inclusive)
 - as-of forecast: per delivery interval, the eligible version with the greatest publishTime
-
-Time parsing and windows live in timeutil.py (same package, still pure).
 """
 
 from __future__ import annotations
@@ -31,7 +28,7 @@ logger = logging.getLogger(__name__)
 def select_as_of(
     forecasts, cutoff: datetime, win_start: datetime, win_end: datetime
 ) -> dict[datetime, dict]:
-    """As-of selection (file 03 §3 steps 3-4, §7 dedupe rule).
+    """As-of selection.
 
     forecasts: iterable of dicts with start_time / publish_time / generation.
     Returns {start_time(datetime): chosen record} where the record has parsed
@@ -41,7 +38,7 @@ def select_as_of(
       - keep startTime in [win_start, win_end) AND publishTime <= cutoff (inclusive)
       - latest publishTime per startTime wins (strictly greater replaces)
       - duplicate (startTime, publishTime): first occurrence kept; a later one with a
-        DIFFERENT generation replaces it with a warning (last-of-file wins, file 03 §7)
+        DIFFERENT generation replaces it with a warning (last-of-file wins)
     """
     cutoff = parse_utc(cutoff)
     win_start = parse_utc(win_start)
@@ -77,17 +74,17 @@ def select_as_of(
 # ------------------------------------------------------------------ matching
 
 def match(chosen: dict, actuals: dict) -> tuple[list[dict], list[dict]]:
-    """Join as-of forecasts with actuals on identical startTime (file 03 §3 steps 6-7).
+    """Join as-of forecasts with actuals on identical startTime.
 
     chosen:  {start_time(datetime): {"start_time", "publish_time", "generation"}}
     actuals: {start_time(datetime): generation(float | None)}
 
     Returns (points, actuals_only):
-      - points: one row per chosen interval (matched or not); never 0 for missing;
-        error = generation - actual ONLY when both sides are non-null (file 03 §7 step 7)
+      - points: one row per chosen interval (matched or not); missing stays
+        missing, never 0; error = generation - actual ONLY when both sides are
+        non-null
       - actuals_only: window actuals (e.g. :30 half-hours, hourly forecast product)
-        with NO chosen forecast — shown separately, never interpolated (file 03 §6)
-    Point shape follows file 05 (forecast_mw / actual_mw / lead_time_h / error_mw).
+        with NO chosen forecast — shown separately, never interpolated
     """
     points: list[dict] = []
     for st in sorted(chosen):
@@ -120,14 +117,13 @@ def match(chosen: dict, actuals: dict) -> tuple[list[dict], list[dict]]:
 # ------------------------------------------------------------------ series
 
 def as_of_series(decision_date: str | date, cutoff_hhmm: str, forecasts, actuals) -> dict:
-    """Everything the /api/forecast-vs-actual endpoint needs, for one decision (file 05).
+    """Everything the /api/forecast-vs-actual endpoint needs, for one decision day.
 
     actuals: {start_time(datetime or str): generation(float | None)}
 
     expected_points = distinct forecast startTimes in the window across ALL WINDFOR
-    versions (the product's hourly grid; 24 in January). Coverage uses this, per
-    file 03 §3 step 8. A delivery day with no matched points yields n=0 metrics
-    and coverage 0.0 — never NaN, never an error.
+    versions (the product's hourly grid; 24 in January). A delivery day with no
+    matched points yields n=0 metrics and coverage 0.0 — never NaN, never an error.
     """
     cutoff = decision_cutoff(decision_date, cutoff_hhmm)
     win_start, win_end = delivery_window(decision_date)

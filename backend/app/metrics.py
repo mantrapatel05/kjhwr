@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Forecast error metrics (file 04). PURE: no I/O, no FastAPI.
+"""Forecast error metrics. PURE: no I/O, no FastAPI.
 
-Convention: error = forecast - actual (MW). e > 0 → over-forecast.
-All metrics use matched, non-null pairs only. n == 0 → null metrics, never NaN.
-
-P90 uses linear interpolation — equivalent of numpy.percentile(..., 90) default
-("linear"), stated as such in the README. numpy is NOT a dependency (file 08 §1
-keeps the image small); the hand-checkable case in file 04 §25 pins the values.
-MAPE is deliberately absent: actual wind can be near zero and it explodes (file 04).
+Convention: error = forecast - actual (MW); positive means over-forecast.
+Only matched, non-null pairs enter the math; n == 0 gives null metrics, never NaN.
+P90 uses linear interpolation (numpy.percentile's default "linear" method);
+numpy itself is not a dependency, to keep the image small. MAPE is deliberately
+absent: actual wind can be near zero and it explodes.
 """
 
 from __future__ import annotations

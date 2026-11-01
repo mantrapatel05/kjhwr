@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Response schemas (file 05 §2): the EXACT field names the React frontend depends on.
+"""Response schemas: the EXACT field names the React frontend depends on.
 
 Every response key set must match the contract exactly — no extra, no missing keys.
 MW values are numbers or null (missing is missing, never 0). Metric floats are

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""FastAPI application entrypoint (file 05).
+"""FastAPI application entrypoint.
 
 Layering: routes.py (thin HTTP) -> service.py (orchestration, caching) ->
 processing.py / metrics.py (pure logic) -> data_store.py (only snapshot reader).

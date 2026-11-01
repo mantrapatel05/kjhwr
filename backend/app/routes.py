@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""HTTP layer (file 05 §2). THIN by design: validate request shape, call service, return.
+"""HTTP layer. THIN by design: validate request shape, call service, return.
 
 Validation policy:
 - unparsable params (bad date, bad HH:MM)        -> 422, string detail
@@ -8,7 +8,7 @@ Validation policy:
 - unknown /api/* paths                           -> JSON 404 (catch-all LAST in router)
 
 Metric floats are rounded to 3 decimals HERE, the serialisation point — full
-precision flows through processing/metrics (hard: round at serialisation only).
+precision flows through processing/metrics/service.
 """
 
 from __future__ import annotations

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Service layer (file 05 §1): the ONE orchestration point.
+"""Service layer: the ONE orchestration point.
 
 routes.py stays thin; ALL orchestration lives here. The snapshot is loaded ONCE
 per process (service.load at startup) and kept in memory for its lifetime — the
-deployed app never reads the network or data/raw/ at runtime (file 02 §4).
+deployed app never reads the network or data/raw/ at runtime.
 
 Caching: computed days are cached per (decision_date, cutoff) — 31 x 5 tiny,
 deterministic combinations an unbounded cache handles correctly. Actuals and
-forecast versions are indexed by start_time at load (file: index by start_time).
+forecast versions are indexed by start_time at load.
 """
 
 from __future__ import annotations
@@ -23,8 +23,8 @@ _ACTUALS_BY_DT: dict = {}          # same, keyed by parsed datetime (lead-time n
 _FORECASTS_BY_START: dict = {}     # {start_time datetime: [version records]}
 _META: dict = {}
 
-# Lead-time scope refinement (recorded decision, file 01 §6): only versions
-# published inside January 2026, for startTime inside the January delivery span.
+# Lead-time scope decision: only versions published inside January 2026, for
+# startTime inside the January delivery span.
 _LEAD_PUB_START = timeutil.parse_utc("2026-01-01T00:00:00Z")
 _LEAD_PUB_END_EXCL = timeutil.parse_utc("2026-02-01T00:00:00Z")
 _LEAD_START_START = timeutil.parse_utc("2026-01-02T00:00:00Z")
@@ -60,7 +60,7 @@ def _ensure_loaded() -> None:
 
 @lru_cache(maxsize=None)
 def _day_cache(decision_date: str, cutoff: str):
-    """True cache, keyed only by plain strings (must stay (date, cutoff)-addressable)."""
+    """True cache; key stays plain strings (decision_date, cutoff)."""
     return processing.as_of_series(decision_date, cutoff, _FORECASTS, _ACTUALS)
 
 
@@ -72,7 +72,7 @@ def day(decision_date: str, cutoff: str | None = None) -> dict:
 
 def period_metrics(from_date: str, to_date: str, cutoff: str | None = None) -> dict:
     """/api/metrics: metrics POOLED over all matched points of decision dates in
-    [from_date, to_date] — NOT an average of daily metrics (file 05 §2)."""
+    [from_date, to_date] — NOT an average of daily metrics."""
     _ensure_loaded()
     cursor = timeutil.parse_decision_date(from_date)
     end = timeutil.parse_decision_date(to_date)
@@ -151,7 +151,7 @@ def versions(target: datetime, cutoff: datetime) -> dict:
 def lead_time_buckets(bucket_hours: int) -> list[dict]:
     """/api/metrics/by-lead-time: metrics per lead-time bucket over ALL versions.
 
-    Scope (recorded decision): publishTime in [2026-01-01, 2026-02-01), startTime
+    Scope: publishTime in [2026-01-01, 2026-02-01), startTime
     in [2026-01-02, 2026-02-02), startTime > publishTime, generation not null, and
     a non-null actual at the same startTime. Closed buckets are [k*bh, min((k+1)*bh,
     48)); everything >= 48 h falls in the final open-ended bucket (end = None).

@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Time parsing and window helpers (file 03 §2). PURE: no I/O, no FastAPI.
+"""Time parsing and window helpers. PURE: no I/O, no FastAPI.
 
-Every timestamp in the app is UTC and timezone-aware; January is GMT, so UTC
-equals UK local time and NO conversion is ever applied (file 03 §7).
-Naive datetimes are rejected, not silently assumed (hard rule 3).
+Every timestamp is UTC and timezone-aware; January is GMT, so UTC equals UK
+local time and no conversion is ever applied. Naive datetimes are rejected,
+never silently assumed.
 """
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timedelta, timezone
 
 UTC = timezone.utc
@@ -19,7 +20,7 @@ def parse_utc(value: str | datetime) -> datetime:
     """'2026-01-15T10:00:00Z' (or +00:00, or an aware datetime) -> aware datetime in UTC.
 
     Raises ValueError on naive input — a timestamp without an explicit offset can
-    only come from a bug, and assuming UTC would hide it (file 03 §7, hard rule 3).
+    only come from a bug, and assuming UTC would hide it.
     """
     if isinstance(value, datetime):
         if value.tzinfo is None:
@@ -31,15 +32,12 @@ def parse_utc(value: str | datetime) -> datetime:
     return dt.astimezone(UTC)
 
 
-import logging
-import re
-
 _DECISION_SHAPE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def parse_decision_date(value: str | date) -> date:
     """'2026-01-15' -> datetime.date. Rejects ANY other shape (e.g. '2026-1-15')
-    and impossible calendar dates; no silent recovery (file 03 §7, hard rule 3)."""
+    and impossible calendar dates; no silent recovery."""
     if isinstance(value, date):
         return value
     text = str(value)
@@ -67,7 +65,7 @@ def parse_time_of_day(hhmm: str) -> tuple[int, int]:
 def delivery_window(decision_date: str | date) -> tuple[datetime, datetime]:
     """Decision day d targets delivery day D = d + 1.
 
-    Returns [D 00:00Z, (D+1) 00:00Z) — half-open, per file 03 §2. Decision day
+    Returns [D 00:00Z, (D+1) 00:00Z) — half-open. Decision day
     2026-01-31 therefore maps to delivery day 2026-02-01.
     """
     d = parse_decision_date(decision_date)
@@ -76,7 +74,7 @@ def delivery_window(decision_date: str | date) -> tuple[datetime, datetime]:
 
 
 def decision_cutoff(decision_date: str | date, hhmm: str) -> datetime:
-    """Decision day d at HH:MM UTC (file 03 §2). Explicit parameter, never hardcoded."""
+    """Decision day d at HH:MM UTC. Explicit parameter, never hardcoded."""
     d = parse_decision_date(decision_date)
     h, m = parse_time_of_day(hhmm)
     return datetime(d.year, d.month, d.day, h, m, tzinfo=UTC)
