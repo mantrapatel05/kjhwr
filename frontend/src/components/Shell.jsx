@@ -31,7 +31,13 @@ export function Shell({ route, config, children }) {
       <a className="skip-link" href="#main" onClick={skip}>Skip to content</a>
       <header className="app-header">
         <div className="app-header__inner">
-          <p className="brand">{PRODUCT_NAME}</p>
+          <div className="brand">
+            <span className="brand-mark" aria-hidden="true">WF</span>
+            <span className="brand__text">
+              <span className="eyebrow">Day-ahead wind analytics</span>
+              <span className="brand__title">{PRODUCT_NAME}</span>
+            </span>
+          </div>
           <nav className="nav" aria-label="Primary">
             <ul className="nav__list">
               {NAV.map((n) => (
@@ -43,6 +49,14 @@ export function Shell({ route, config, children }) {
               ))}
             </ul>
           </nav>
+          <p className="header-meta">
+            {config?.snapshot_fetched_at ? (
+              <span>Snapshot {fmtDate(config.snapshot_fetched_at)}</span>
+            ) : (
+              <span>Elexon snapshot, January 2026</span>
+            )}
+            <span className="status-dot">Snapshot ready</span>
+          </p>
         </div>
       </header>
       <p className="sr-only" role="status">{title}</p>

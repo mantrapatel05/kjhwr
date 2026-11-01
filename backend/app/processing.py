@@ -159,5 +159,9 @@ def as_of_series(decision_date: str | date, cutoff_hhmm: str, forecasts, actuals
         "matched_points": matched,
         "points": points,
         "actuals_only": actuals_only,
-        "metrics": {**metrics, "coverage_pct": (matched / expected) * 100.0 if expected else 0.0},
+        "metrics": {
+            **metrics,
+            "expected": expected,
+            "coverage_pct": (matched / expected) * 100.0 if expected else 0.0,
+        },
     }

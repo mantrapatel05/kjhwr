@@ -80,3 +80,8 @@ def decision_cutoff(decision_date: str | date, hhmm: str) -> datetime:
     d = parse_decision_date(decision_date)
     h, m = parse_time_of_day(hhmm)
     return datetime(d.year, d.month, d.day, h, m, tzinfo=UTC)
+
+
+def iso_z(dt: datetime) -> str:
+    """Aware datetime -> 'YYYY-MM-DDTHH:MM:SSZ' (the app's ONLY output format)."""
+    return parse_utc(dt).strftime("%Y-%m-%dT%H:%M:%SZ")
