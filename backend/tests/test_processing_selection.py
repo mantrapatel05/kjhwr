@@ -150,5 +150,20 @@ def test_series_shape_and_metrics_glue():
 def test_series_empty_delivery_day_is_not_error():
     s = P.as_of_series("2026-01-20", "09:00", [], {})
     assert s["points"] == [] and s["matched_points"] == 0
+    assert s["expected_points"] == 0
+    assert s["metrics"]["expected"] == 0
     assert s["metrics"]["n"] == 0 and s["metrics"]["mae_mw"] is None
+    assert s["metrics"]["coverage_pct"] == 0.0
+
+
+def test_future_only_expected_timestamp_is_not_actuals_only():
+    future_forecast = fc(T10, "2026-01-15T10:00:00Z", 5100)
+    actuals = {parse_utc(T10): 5000.0}
+
+    s = P.as_of_series(D, "09:00", [future_forecast], actuals)
+
+    assert s["expected_points"] == 1
+    assert s["points"] == []
+    assert s["actuals_only"] == []
+    assert s["matched_points"] == 0
     assert s["metrics"]["coverage_pct"] == 0.0

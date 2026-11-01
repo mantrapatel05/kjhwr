@@ -18,5 +18,9 @@ COPY backend/ ./
 ENV STATIC_DIR=/app/static
 COPY --from=web /web/dist ./static
 
+RUN addgroup --system --gid 10001 app \
+    && adduser --system --uid 10001 --ingroup app --no-create-home app
+USER app
+
 EXPOSE 8000
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

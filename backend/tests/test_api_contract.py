@@ -158,9 +158,9 @@ def test_pooled_metrics_keys_and_pooled_not_averaged():
         "rmse_mw", "p90_abs_error_mw", "max_abs_error_mw",
     }
     # Pooled n and math come from the fixture's only day with data;
-    # pooled expected = sum of daily expected: 30 fallback days x 24 + 3 = 723.
+    # Expected points are the three distinct WINDFOR start times in the fixture.
     assert pooled["n"] == 2
-    assert pooled["expected"] == 30 * 24 + 3
+    assert pooled["expected"] == 3
     assert pooled["mae_mw"] == 2750.0          # errors [500, 5000] — NOT averaged daily
 
 

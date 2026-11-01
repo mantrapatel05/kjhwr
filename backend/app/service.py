@@ -12,6 +12,7 @@ forecast versions are indexed by start_time at load.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import date, datetime, timedelta
 from functools import lru_cache
 
@@ -67,7 +68,7 @@ def _day_cache(decision_date: str, cutoff: str):
 def day(decision_date: str, cutoff: str | None = None) -> dict:
     """/api/forecast-vs-actual payload for one decision (config default cutoff if None)."""
     _ensure_loaded()
-    return _day_cache(decision_date, cutoff or config.DEFAULT_CUTOFF)
+    return deepcopy(_day_cache(decision_date, cutoff or config.DEFAULT_CUTOFF))
 
 
 def period_metrics(from_date: str, to_date: str, cutoff: str | None = None) -> dict:

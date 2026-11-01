@@ -48,8 +48,9 @@ rule is exercised by tests (null-forecast fixture), not by production data.
 
 Missing forecasts never become 0 and are never interpolated:
 - unmatched points stay in the response with null forecast/error, `matched: false`
-- actuals without any eligible forecast (e.g. the half-hourly FUELHH rows at :30,
-  since WINDFOR is hourly on :00) are shown separately in `actuals_only`
+- actuals whose timestamps are absent from every WINDFOR version (e.g. FUELHH
+  half-hours at :30) are shown separately in `actuals_only`; expected timestamps
+  with only post-cutoff versions remain in the denominator
 - metrics use matched, non-null pairs only; a day with no matches yields
   n = 0 and null metrics, never NaN
 
@@ -61,12 +62,13 @@ would hide upstream bugs. Decision dates must be strict `YYYY-MM-DD` (the padded
 shape; `2026-1-15` is rejected). The cutoff is always an explicit, visible
 parameter.
 
-## D7 — Expected points = the product's hourly grid
+## D7 — Expected points = timestamps present in any forecast version
 
 `expected_points` counts distinct forecast startTimes in the delivery window
-across ALL WINDFOR versions (24 per day for an hourly product in January),
-not merely the matched ones. Coverage = matched / expected. A window with no
-forecast rows falls back to 24 (the hourly grid).
+across ALL WINDFOR versions, including versions published after the cutoff.
+Coverage = matched / expected. A timestamp with only future-published versions
+counts in the denominator. An empty set of forecast timestamps has expected 0;
+there is no synthetic hourly-grid fallback.
 
 ## D8 — Metrics: pooled, error convention, no MAPE, 3 dp at serialisation
 
@@ -115,13 +117,16 @@ non-WIND fuelType row (verified 100% WIND in the inspection report).
 FastAPI app entrypoint → thin `routes.py` (validation + serialisation) →
 `service.py` (orchestration, day cache keyed by (decision_date, cutoff),
 indexes built once at load) → pure `processing.py`/`metrics.py` → `data_store.py`
-(the ONLY snapshot reader). Load-once fail-fast at startup; later /api errors
-are application errors, not data-loading errors.
+(the ONLY snapshot reader). The snapshot loads and validates once during app
+module import, before the server accepts requests; later /api errors are
+application errors, not data-loading errors.
 
 ## D14 — Serving and deployment
 
-Single origin on Vercel: an API service (FastAPI, root `backend/`) and a static
+Vercel is configured with an API service (FastAPI, root `backend/`) and a
 frontend service (Vite, root `frontend/`), with `/api/*` rewrites to the API.
+The audited deployment returned 404 at `/` while `/api/health` worked;
+frontend routing must be verified after the routing configuration is corrected.
 CORS is dev-only (http://localhost:5173). In dev, the frontend proxies `/api`
 to uvicorn on :8000. Docker (Stage 6) provides the portable single-container
 alternative: frontend built in a node stage, served by the Python image with

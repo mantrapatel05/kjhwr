@@ -82,6 +82,14 @@ def test_normalise_windfor_drops_rows_missing_required_times():
     ]
     out, meta = F.normalise_windfor(rows)
     assert out == [] and meta["rows_snapshot"] == 0
+    assert meta["rows_missing_required_keys"] == 2
+
+
+def test_normalise_windfor_counts_missing_generation_key():
+    row = {"startTime": "2026-01-16T10:00:00Z", "publishTime": "2026-01-15T07:30:00Z"}
+    out, meta = F.normalise_windfor([row])
+    assert out == []
+    assert meta["rows_missing_required_keys"] == 1
 
 
 def test_normalise_windfor_keeps_null_generation():
@@ -126,6 +134,14 @@ def test_normalise_fuelhh_zero_generation_is_valid():
 def test_normalise_fuelhh_drops_missing_starttime():
     out, meta = F.normalise_fuelhh([fh(None, 4700.0, "WIND")])
     assert out == [] and meta["rows_snapshot"] == 0
+    assert meta["rows_missing_required_keys"] == 1
+
+
+def test_normalise_fuelhh_counts_missing_generation_key():
+    row = {"startTime": "2026-01-16T10:00:00Z", "fuelType": "WIND"}
+    out, meta = F.normalise_fuelhh([row])
+    assert out == []
+    assert meta["rows_missing_required_keys"] == 1
 
 
 # ---------------------------------------------------------------- serialisation

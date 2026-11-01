@@ -82,11 +82,13 @@ def recompute(decision_date: str, hhmm: str, forecasts: list[dict], actuals: lis
     # 1) selection: latest version published at or before the cutoff wins.
     #    startIndex in the window only; inclusive cutoff; last duplicate wins.
     versions: dict[tuple[datetime, datetime], float | None] = {}
+    expected_starts: set[datetime] = set()
     for row in forecasts:
         st = _parse_utc(row["start_time"])
         pt = _parse_utc(row["publish_time"])
         if not (win_start <= st < win_end):
             continue
+        expected_starts.add(st)
         if pt > cutoff:
             continue
         versions[(st, pt)] = row["generation"]
@@ -97,7 +99,7 @@ def recompute(decision_date: str, hhmm: str, forecasts: list[dict], actuals: lis
         if prior is None or pt > prior[0]:
             chosen[st] = (pt, gen)
 
-    expected = len({st for st, _ in versions}) if versions else 24  # hourly-grid fallback
+    expected = len(expected_starts)
 
     # 2) matching on identical startTime, nulls stay null, never zero.
     actual_lookup = {_parse_utc(a["start_time"]): a["generation"] for a in actuals}
@@ -142,6 +144,33 @@ def fetch_server(base_url: str, decision_date: str, hhmm: str) -> dict:
         return json.loads(response.read())
 
 
+def comparison_differences(mine: dict, theirs: dict) -> list[str]:
+    """Compare every decision-level field and metric reported by the script."""
+    differences = []
+    for key in (
+        "decision_date", "cutoff_utc", "delivery_day", "expected_points", "matched_points"
+    ):
+        if mine[key] != theirs[key]:
+            differences.append(f"{key}: recompute={mine[key]!r}, server={theirs[key]!r}")
+
+    local_metrics = {**mine["metrics"], "expected": mine["expected_points"],
+                     "coverage_pct": mine["coverage_pct"]}
+    remote_metrics = theirs["metrics"]
+    metric_keys = (
+        "n", "expected", "coverage_pct", "bias_mw", "mae_mw", "rmse_mw",
+        "p90_abs_error_mw", "max_abs_error_mw",
+    )
+    for key in metric_keys:
+        local, remote = local_metrics[key], remote_metrics[key]
+        if local is None or remote is None:
+            same = local is remote
+        else:
+            same = round(local, 3) == round(remote, 3)
+        if not same:
+            differences.append(f"metrics.{key}: recompute={local!r}, server={remote!r}")
+    return differences
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Recompute one decision day independently of the app.")
     parser.add_argument("decision_date", help="decision date, YYYY-MM-DD")
@@ -172,19 +201,24 @@ def main() -> int:
     theirs = fetch_server(args.server, args.decision_date, args.cutoff)
     tm = theirs["metrics"]
     print(f"\nserver {args.server}")
-    print(f"  matched/expected {theirs['matched_points']}/{theirs['expected_points']}  (coverage {tm['coverage_pct']}%)")
-    print(f"  mae_mw           {tm['mae_mw']}")
-    print(f"  rmse_mw          {tm['rmse_mw']}")
+    print(f"  decision_date    {theirs['decision_date']}")
+    print(f"  cutoff_utc       {theirs['cutoff_utc']}")
+    print(f"  delivery_day     {theirs['delivery_day']}")
+    print(f"  matched/expected {theirs['matched_points']}/{theirs['expected_points']}")
+    for key in (
+        "n", "expected", "coverage_pct", "bias_mw", "mae_mw", "rmse_mw",
+        "p90_abs_error_mw", "max_abs_error_mw",
+    ):
+        value = tm[key]
+        rendered = "-" if value is None else f"{value:.3f}"
+        print(f"  {key:<17} {rendered}")
 
-    agree = (
-        mine["matched_points"] == theirs["matched_points"]
-        and mine["expected_points"] == theirs["expected_points"]
-        and m["n"] == tm["n"]
-        and round(m["mae_mw"], 3) == round(tm["mae_mw"], 3)
-        and round(m["rmse_mw"], 3) == round(tm["rmse_mw"], 3)
-    )
-    print("\nMATCH: recompute agrees with the server" if agree else "\nMISMATCH: recompute disagrees with the server")
-    return 0 if agree else 1
+    differences = comparison_differences(mine, theirs)
+    for difference in differences:
+        print(f"  MISMATCH {difference}")
+    print("\nMATCH: recompute agrees with all reported metrics" if not differences
+          else "\nMISMATCH: recompute disagrees with the server")
+    return 0 if not differences else 1
 
 
 if __name__ == "__main__":

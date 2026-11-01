@@ -73,7 +73,9 @@ def select_as_of(
 
 # ------------------------------------------------------------------ matching
 
-def match(chosen: dict, actuals: dict) -> tuple[list[dict], list[dict]]:
+def match(
+    chosen: dict, actuals: dict, expected_starts: set | None = None
+) -> tuple[list[dict], list[dict]]:
     """Join as-of forecasts with actuals on identical startTime.
 
     chosen:  {start_time(datetime): {"start_time", "publish_time", "generation"}}
@@ -83,8 +85,12 @@ def match(chosen: dict, actuals: dict) -> tuple[list[dict], list[dict]]:
       - points: one row per chosen interval (matched or not); missing stays
         missing, never 0; error = generation - actual ONLY when both sides are
         non-null
-      - actuals_only: window actuals (e.g. :30 half-hours, hourly forecast product)
-        with NO chosen forecast — shown separately, never interpolated
+      - actuals_only: window actuals outside the expected WINDFOR timestamps
+        (e.g. :30 half-hours), shown separately, never interpolated
+
+    When expected_starts is omitted, direct callers retain the historical
+    behavior of comparing against the chosen intervals. The day series passes
+    all timestamps from every WINDFOR version so future-only versions count.
     """
     points: list[dict] = []
     for st in sorted(chosen):
@@ -104,8 +110,9 @@ def match(chosen: dict, actuals: dict) -> tuple[list[dict], list[dict]]:
             }
         )
 
+    known_starts = set(chosen) if expected_starts is None else expected_starts
     actuals_only = []
-    for st in sorted(set(actuals) - set(chosen)):
+    for st in sorted(set(actuals) - known_starts):
         a = actuals[st]
         if a is not None:
             actuals_only.append(
@@ -121,9 +128,10 @@ def as_of_series(decision_date: str | date, cutoff_hhmm: str, forecasts, actuals
 
     actuals: {start_time(datetime or str): generation(float | None)}
 
-    expected_points = distinct forecast startTimes in the window across ALL WINDFOR
-    versions (the product's hourly grid; 24 in January). A delivery day with no
-    matched points yields n=0 metrics and coverage 0.0 — never NaN, never an error.
+    expected_points is the number of distinct forecast startTimes in the window
+    across ALL WINDFOR versions. If no timestamp appears, expected_points is 0.
+    A delivery day with no matched points yields n=0 metrics and coverage 0.0 —
+    never NaN, never an error.
     """
     cutoff = decision_cutoff(decision_date, cutoff_hhmm)
     win_start, win_end = delivery_window(decision_date)
@@ -133,7 +141,7 @@ def as_of_series(decision_date: str | date, cutoff_hhmm: str, forecasts, actuals
         for rec in forecasts
         if win_start <= parse_utc(rec["start_time"]) < win_end
     }
-    expected = len(candidates) if candidates else 24  # hourly grid fallback (Jan = GMT)
+    expected = len(candidates)
 
     chosen = select_as_of(forecasts, cutoff, win_start, win_end)
 
@@ -142,7 +150,7 @@ def as_of_series(decision_date: str | date, cutoff_hhmm: str, forecasts, actuals
         st: a for st, a in actuals_dt.items() if win_start <= st < win_end
     }
 
-    points, actuals_only = match(chosen, actuals_in_window)
+    points, actuals_only = match(chosen, actuals_in_window, candidates)
     metrics = compute_metrics([p["error_mw"] for p in points])
     matched = sum(1 for p in points if p["matched"])
     d = parse_decision_date(decision_date)

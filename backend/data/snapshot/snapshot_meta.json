@@ -15,11 +15,13 @@
     "windfor_raw": {
       "rows_raw": 20440,
       "rows_snapshot": 20440,
+      "rows_missing_required_keys": 0,
       "conflicting_duplicates": 0
     },
     "fuelhh_raw": {
       "rows_raw": 1584,
       "non_wind_discarded": 0,
+      "rows_missing_required_keys": 0,
       "rows_snapshot": 1584
     }
   },
@@ -104,6 +106,6 @@
   ],
   "snapshot_files": [
     "windfor.json.gz",
-    "fuelhh.json.gz"
+    "fuelhh_wind.json.gz"
   ]
 }

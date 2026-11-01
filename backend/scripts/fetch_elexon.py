@@ -248,9 +248,15 @@ def normalise_windfor(rows: list[dict]) -> tuple[list[dict], dict]:
     """Raw WINDFOR rows -> snapshot records. Dedupes identical (startTime, publishTime)."""
     records: dict[tuple[str, str], dict] = {}
     conflicts = 0
+    missing_required_keys = 0
     for r in rows:
-        st, pt, gen = r.get("startTime"), r.get("publishTime"), r.get("generation")
+        required = ("startTime", "publishTime", "generation")
+        if any(key not in r for key in required):
+            missing_required_keys += 1
+            continue
+        st, pt, gen = r["startTime"], r["publishTime"], r["generation"]
         if not st or not pt:
+            missing_required_keys += 1
             continue
         key = (st, pt)
         if key in records:
@@ -261,7 +267,12 @@ def normalise_windfor(rows: list[dict]) -> tuple[list[dict], dict]:
             continue
         records[key] = {"start_time": st, "publish_time": pt, "generation": gen}
     out = [records[k] for k in sorted(records)]
-    return out, {"rows_raw": len(rows), "rows_snapshot": len(out), "conflicting_duplicates": conflicts}
+    return out, {
+        "rows_raw": len(rows),
+        "rows_snapshot": len(out),
+        "rows_missing_required_keys": missing_required_keys,
+        "conflicting_duplicates": conflicts,
+    }
 
 
 def normalise_fuelhh(rows: list[dict]) -> tuple[list[dict], dict]:
@@ -271,18 +282,28 @@ def normalise_fuelhh(rows: list[dict]) -> tuple[list[dict], dict]:
         # defence in depth: the API filter should have removed these
         print(f"  [FUELHH] WARNING: {non_wind} non-WIND rows present in API response")
     latest: dict[str, dict] = {}
+    missing_required_keys = 0
     for r in rows:
         if str(r.get("fuelType", "")).upper() != "WIND":
             continue
-        st, pt, gen = r.get("startTime"), r.get("publishTime"), r.get("generation")
+        if "startTime" not in r or "generation" not in r:
+            missing_required_keys += 1
+            continue
+        st, pt, gen = r["startTime"], r.get("publishTime"), r["generation"]
         if not st:
+            missing_required_keys += 1
             continue
         prior = latest.get(st)
         if prior is None or (pt or "") >= (prior["generation_ts"] or ""):
             latest[st] = {"start_time": st, "generation": gen, "generation_ts": pt}
     out = [{"start_time": v["start_time"], "generation": v["generation"]} for v in latest.values()]
     out.sort(key=lambda r: r["start_time"])
-    return out, {"rows_raw": len(rows), "non_wind_discarded": non_wind, "rows_snapshot": len(out)}
+    return out, {
+        "rows_raw": len(rows),
+        "non_wind_discarded": non_wind,
+        "rows_missing_required_keys": missing_required_keys,
+        "rows_snapshot": len(out),
+    }
 
 
 

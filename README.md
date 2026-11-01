@@ -3,7 +3,11 @@
 How well did Great Britain's day-ahead wind forecasts, as they were known at
 decision time, actually hold up against what the wind produced?
 
-**Live app:** https://kjhwr-weld-seven.vercel.app
+**Configured Vercel URL:** https://kjhwr-weld-seven.vercel.app
+
+The last checked deployment served the API, but its root returned a 404. The
+frontend route has been corrected in `vercel.json`; this repository change has
+not been deployed.
 
 ## What it is
 
@@ -105,13 +109,14 @@ cd backend
 python scripts/recompute_day.py 2026-01-05 09:00 --server https://kjhwr-weld-seven.vercel.app
 ```
 
-Output ends with `MATCH: recompute agrees with the server` (exit code 0).
+The final `MATCH` compares the date/cutoff fields, counts, coverage and every
+reported scalar metric. It does not compare the individual point rows.
 
 ## Tests
 
 ```
-cd backend && python -m pytest        # 81 passed
-cd frontend && npm test -- --run     # 19 passed
+cd backend && python -m pytest
+cd frontend && npm test -- --run
 ```
 
 Backend covers as-of selection leakage boundaries, matching, metrics (including

@@ -75,7 +75,10 @@ describe('App', () => {
     mockFetch();
     window.location.hash = '#/day?date=2026-01-14&cutoff=09:00';
     render(<App />);
-    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Decision on 14 Jan 2026, delivery on 15 Jan 2026');
+    expect(await screen.findByRole('heading', {
+      level: 1,
+      name: 'Decision on 14 Jan 2026, delivery on 15 Jan 2026',
+    })).toBeTruthy();
     const table = await screen.findByRole('table', { name: /each delivery interval/i });
     const rows = within(table).getAllByRole('row');
     expect(rows).toHaveLength(4); // header + 3 points

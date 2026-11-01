@@ -24,11 +24,12 @@ tested behaviour rather than a favourable accident of the data.
 
 ## Q3. How does the app handle missing or half-hourly data?
 
-Missing stays missing: no zeros, no interpolation. Points with a null forecast or null actual stay unmatched (error stays null), and actuals that never got an
-eligible forecast (the :30 half-hours of FUELHH against the hourly WINDFOR
-grid) are displayed separately in `actuals_only`. Coverage denominators come
-from the product's hourly grid, not from the matched set, so an optimistic
-coverage number is impossible.
+Missing stays missing: no zeros, no interpolation. Points with a null forecast or null actual stay unmatched (error stays null). Actuals whose timestamps
+are absent from every WINDFOR version (such as :30 half-hours of FUELHH) are
+displayed separately in `actuals_only`; future-only expected timestamps remain
+in the coverage denominator. Coverage denominators count
+distinct WINDFOR start times across every version, including versions published
+after the cutoff; an empty set has denominator 0.
 
 ## Q4. Why is metric pooling not an average of daily metrics?
 
@@ -96,22 +97,24 @@ Both answers, per metric:
 | p90_abs_error_mw    | 3791.000             | 3791.000                         |
 | max_abs_error_mw    | 4291.000             | 4291.000                         |
 
-The script's raw output ends with the verdict:
+The script compares date/cutoff fields, counts, coverage and every scalar metric
+to three decimal places. It does not compare each point row. Its raw output ends
+with the verdict:
 
 ```
-MATCH: recompute agrees with the server
+MATCH: recompute agrees with all reported metrics
 ```
 
-Twenty-four of twenty-four points matched and identical metrics on every row:
-the selection and metric paths are verified end-to-end without trusting the
-same code twice — the script is a genuinely independent second opinion, and it
-exits non-zero if the two ever disagree.
+The independent recomputation provides a second check of decision-level
+aggregate metrics. A match does not assert that individual point rows are
+identical.
 
 ## Q11. How does the deployment work?
 
-Single origin: Vercel serves the built frontend (Vite static) and routes /api/*
-to the FastAPI service. CORS stays dev-only. CORS-vs-Vercel caveat: the browser
-trips across the same origin, so no cross-origin rules are needed in production.
+Vercel is configured to build a Vite frontend service and a FastAPI service;
+`/api/*` is rewritten to FastAPI. During this audit the deployed root URL
+returned 404 while `/api/health` returned 200, so a successful frontend
+deployment has not been verified. CORS stays dev-only.
 Docker is built and locally tested as the portable single-container alternative:
 a multi-stage Dockerfile at the repo root builds the frontend in a node stage,
 and the python:3.12-slim stage serves the backend plus the built static files
