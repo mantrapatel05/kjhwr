@@ -1,0 +1,32 @@
+# --- version control / editor ---
+.git
+.gitignore
+.vscode
+.idea
+
+# --- docs / dev notes ---
+*.md
+
+# --- context / scratch ---
+context
+
+# --- docker files themselves ---
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# --- frontend: keep build out of context (rebuilt in stage 1) ---
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/test-results
+
+# --- backend: tests, scripts, caches, raw data ---
+backend/tests
+backend/scripts
+backend/.pytest_cache
+backend/pytest.ini
+backend/requirements-dev.txt
+backend/data/raw
+**/__pycache__
+**/*.pyc
