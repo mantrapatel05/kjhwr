@@ -32,14 +32,24 @@ import requests
 BASE_URL = "https://data.elexon.co.uk/bmrs/api/v1"
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW_DIR = ROOT / "data" / "raw"
-SNAP_DIR = ROOT / "data" / "snapshot"
 
-WINDFOR_FROM = datetime(2025, 12, 28, 0, 0, tzinfo=timezone.utc)
-WINDFOR_TO = datetime(2026, 2, 1, 0, 0, tzinfo=timezone.utc)
-FUELHH_FROM = date(2026, 1, 1)
-FUELHH_TO = date(2026, 2, 2)
-CHUNK_DAYS = 7
+# Standalone script: make the app package importable for the shared constants.
+# app/config.py is the single source of truth for windows and chunking (file 01 §6).
+sys.path.insert(0, str(ROOT))
+from app.config import (  # noqa: E402
+    CHUNK_DAYS,
+    FETCH_FUELHH_SETTLEMENT_FROM as FUELHH_FROM,
+    FETCH_FUELHH_SETTLEMENT_TO as FUELHH_TO,
+    FETCH_WINDFOR_PUBLISH_FROM as WINDFOR_FROM,
+    FETCH_WINDFOR_PUBLISH_TO as WINDFOR_TO,
+    RAW_DIR,
+    SNAPSHOT_DIR as SNAP_DIR,
+)
+
+# FUELHH keeps the latest known reading when the API returns duplicate startTimes:
+# raw rows store publishTime; helper below compares those ISO strings directly.
+WINDFOR_SNAPSHOT_FILE = "windfor.json.gz"
+FUELHH_SNAPSHOT_FILE = "fuelhh_wind.json.gz"
 
 MAX_ATTEMPTS = 6
 INITIAL_BACKOFF_S = 2.0
@@ -315,8 +325,8 @@ def main() -> None:
     )
 
     print("Writing snapshot...")
-    write_jsonl_gz(SNAP_DIR / "windfor.json.gz", windfor_norm)
-    write_jsonl_gz(SNAP_DIR / "fuelhh.json.gz", fuelhh_norm)
+    write_jsonl_gz(SNAP_DIR / WINDFOR_SNAPSHOT_FILE, windfor_norm)
+    write_jsonl_gz(SNAP_DIR / FUELHH_SNAPSHOT_FILE, fuelhh_norm)
 
     meta = {
         "fetched_at_utc": utc_now_iso(),
@@ -330,7 +340,7 @@ def main() -> None:
             "fuelhh_raw": fh_norm_meta,
         },
         "datasets": [windfor_meta, fuelhh_meta],
-        "snapshot_files": ["windfor.json.gz", "fuelhh.json.gz"],
+        "snapshot_files": [WINDFOR_SNAPSHOT_FILE, FUELHH_SNAPSHOT_FILE],
     }
     (SNAP_DIR / "snapshot_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 

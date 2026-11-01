@@ -11,69 +11,19 @@ Vocabulary (file 03 §1):
 - decision cutoff: the timestamp the purchase decision is made
 - eligible forecast: publishTime <= cutoff (inclusive)
 - as-of forecast: per delivery interval, the eligible version with the greatest publishTime
+
+Time parsing and windows live in timeutil.py (same package, still pure).
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
+
+from .metrics import compute_metrics
+from .timeutil import decision_cutoff, delivery_window, parse_decision_date, parse_utc
 
 logger = logging.getLogger(__name__)
-
-UTC = timezone.utc
-
-
-# ------------------------------------------------------------------ parsing
-
-def parse_utc(value: str | datetime) -> datetime:
-    """'2026-01-15T10:00:00Z' (or +00:00) -> aware datetime in UTC. Never naive."""
-    if isinstance(value, datetime):
-        dt = value
-    else:
-        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    return dt.astimezone(UTC)
-
-
-def parse_decision_date(value: str | date) -> date:
-    """'2026-01-15' -> datetime.date. Raises on any other shape; no silent recovery."""
-    if isinstance(value, date):
-        return value
-    return datetime.strptime(str(value), "%Y-%m-%d").date()
-
-
-def parse_time_of_day(hhmm: str) -> tuple[int, int]:
-    """'09:00' -> (9, 0). Raises on anything not HH:MM (00-23, 00-59)."""
-    parts = str(hhmm).split(":")
-    ok = (
-        len(parts) == 2
-        and all(p.isdigit() and len(p) == 2 for p in parts)
-        and 0 <= int(parts[0]) <= 23
-        and 0 <= int(parts[1]) <= 59
-    )
-    if not ok:
-        raise ValueError(f"invalid HH:MM: {hhmm!r}")
-    return int(parts[0]), int(parts[1])
-
-
-# ------------------------------------------------------------------ windows
-
-def delivery_window(decision_date: str | date) -> tuple[datetime, datetime]:
-    """Decision day d targets delivery day D = d+1.
-
-    Returns [D 00:00Z, (D+1) 00:00Z) — half-open, per file 03 §2.
-    """
-    d = parse_decision_date(decision_date)
-    start = datetime(d.year, d.month, d.day, tzinfo=UTC) + timedelta(days=1)
-    return start, start + timedelta(days=1)
-
-
-def decision_cutoff(decision_date: str | date, hhmm: str) -> datetime:
-    """Decision day d at HH:MM UTC (file 03 §2). Explicit parameter, never hardcoded."""
-    d = parse_decision_date(decision_date)
-    h, m = parse_time_of_day(hhmm)
-    return datetime(d.year, d.month, d.day, h, m, tzinfo=UTC)
 
 
 # ------------------------------------------------------------------ selection
@@ -211,8 +161,3 @@ def as_of_series(decision_date: str | date, cutoff_hhmm: str, forecasts, actuals
         "actuals_only": actuals_only,
         "metrics": {**metrics, "coverage_pct": (matched / expected) * 100.0 if expected else 0.0},
     }
-
-
-# metrics import at bottom avoids a circular import while keeping this module
-# single-responsibility; compute_metrics is pure and stateless.
-from .metrics import compute_metrics  # noqa: E402

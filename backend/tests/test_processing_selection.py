@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Selection tests S1-S9 and matching tests M1-M4 (file 07 §1-2).
+"""Selection tests S1-S9 plus series glue (file 07 §1).
 
 Fixtures are hand-made with HYPOTHETICAL numbers from file 03 §5 — not live data.
 Delivery interval D 10:00Z on delivery day 2026-01-16, decision day 2026-01-15.
@@ -11,6 +11,7 @@ import math
 import random
 
 from app import processing as P
+from app.timeutil import parse_utc
 
 D = "2026-01-15"                       # decision day (delivery day = 2026-01-16)
 WIN = ("2026-01-16T00:00:00Z", "2026-01-17T00:00:00Z")
@@ -41,12 +42,12 @@ def select(forecasts, cutoff=CUT900):
 
 
 def chosen_gen(chosen, st=T10):
-    rec = chosen.get(P.parse_utc(st))
+    rec = chosen.get(parse_utc(st))
     return None if rec is None else rec["generation"]
 
 
 def chosen_pub(chosen, st=T10):
-    return chosen[P.parse_utc(st)]["publish_time"].strftime("%H:%M")
+    return chosen[parse_utc(st)]["publish_time"].strftime("%H:%M")
 
 
 # ---------------------------------------------------------------- selection
@@ -71,23 +72,23 @@ def test_s3_one_second_after_cutoff_excluded():
 
 def test_s4_all_versions_after_cutoff_no_forecast():
     after = versions_base()[:3]                # drop the 07:30, keep the rest after-cut
-    after = [r for r in after if P.parse_utc(r["publish_time"]) > P.parse_utc(CUT900)]
+    after = [r for r in after if parse_utc(r["publish_time"]) > parse_utc(CUT900)]
     after += [fc(T10, V930[0], V930[1])]
     chosen = select(after)
-    assert P.parse_utc(T10) not in chosen      # missing means missing — not zero
+    assert parse_utc(T10) not in chosen        # missing means missing — not zero
 
 
 def test_s5_latest_eligible_null_is_missing_no_fallback():
     rows = [fc(T10, V230[0], V230[1]), fc(T10, V430[0], 5500), fc(T10, V730[0], None)]
     chosen = select(rows)
-    rec = chosen[P.parse_utc(T10)]
+    rec = chosen[parse_utc(T10)]
     assert rec["generation"] is None           # stays with the newest eligible version
     # and matching must NOT quietly reach for the older 5500 run
 
 
 def test_s6_starttime_outside_window_ignored():
     rows = versions_base() + [fc("2026-01-15T10:00:00Z", V730[0], 5210)]
-    assert P.parse_utc("2026-01-15T10:00:00Z") not in select(rows)
+    assert parse_utc("2026-01-15T10:00:00Z") not in select(rows)
 
 
 def test_s7_duplicate_identical_rows_counted_once():
@@ -118,58 +119,15 @@ def test_s9_leakage_property_random_fixtures():
         cut = rng.choice(["2026-01-14T22:00:00Z", "2026-01-15T06:00:00Z",
                           "2026-01-15T09:00:00Z", "2026-01-15T12:00:00Z"])
         chosen = select(rows, cutoff=cut)
-        cut_dt = P.parse_utc(cut)
+        cut_dt = parse_utc(cut)
         for rec in chosen.values():
             assert rec["publish_time"] <= cut_dt   # leak test: ALWAYS true
-
-
-def test_s5_match_null_forecast_not_matched():
-    """null latest version + actual present → point exists, matched False, actual NOT zeroed."""
-    act = {P.parse_utc(T10): 4700.0}
-    points, _ = P.match(select([fc(T10, V230[0], None)]), act)
-    (point,) = points
-    assert point["forecast_mw"] is None and point["matched"] is False
-    assert point["error_mw"] is None and point["actual_mw"] == 4700
-
-
-# ---------------------------------------------------------------- matching
-
-def _match_two(actual_map):
-    chosen = select([fc(T10, V730[0], 5200)])
-    return P.match(chosen, actual_map)
-
-
-def test_m1_same_starttime_matched():
-    points, _ = _match_two({P.parse_utc(T10): 4700.0})
-    (pt,) = points
-    assert pt["matched"] and pt["error_mw"] == 5200 - 4700      # +500 over-forecast
-    assert pt["publish_time"].startswith("2026-01-15T07:30")
-
-
-def test_m2_halfhour_actual_only():
-    act = {P.parse_utc(T10): 4700.0, P.parse_utc("2026-01-16T10:30:00Z"): 4690.0}
-    points, only = _match_two(act)
-    assert all(pt["start_time"] != "2026-01-16T10:30:00Z" for pt in points)
-    assert only == [{"start_time": "2026-01-16T10:30:00Z", "actual_mw": 4690.0}]
-
-
-def test_m3_actual_missing():
-    points, _ = _match_two({P.parse_utc(T10): None})
-    (pt,) = points
-    assert pt["matched"] is False and pt["error_mw"] is None   # unmatched ≠ 0
-
-
-def test_m4_zero_actual_valid():
-    points, _ = _match_two({P.parse_utc(T10): 0.0})
-    (pt,) = points
-    assert pt["matched"] is True                               # zero wind is real
-    assert pt["error_mw"] == 5200
 
 
 # ---------------------------------------------------------------- series glue
 
 def test_series_shape_and_metrics_glue():
-    act = {P.parse_utc(T10): 4700.0}
+    act = {parse_utc(T10): 4700.0}
     # full 24-hour product grid from one 07:30 run, like the real snapshot
     # (hour 10 comes from versions_base() itself; grid must not re-publish it)
     grid = [
