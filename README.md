@@ -5,9 +5,8 @@ decision time, actually hold up against what the wind produced?
 
 **Configured Vercel URL:** https://kjhwr-weld-seven.vercel.app
 
-The last checked deployment served the API, but its root returned a 404. The
-frontend route has been corrected in `vercel.json`; this repository change has
-not been deployed.
+The current deployment serves the frontend at `/`, and `/api/health` responds
+successfully.
 
 ## What it is
 
@@ -115,13 +114,38 @@ reported scalar metric. It does not compare the individual point rows.
 ## Tests
 
 ```
-cd backend && python -m pytest
-cd frontend && npm test -- --run
+python -m venv .venv
 ```
+
+Activate it, then install the development requirements and run the backend tests:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+```sh
+source .venv/bin/activate
+```
+
+```sh
+python -m pip install -r backend/requirements-dev.txt
+cd backend
+python -m pytest -q
+```
+
+Frontend tests: `cd frontend`, then run `npm ci` and `npm test -- --run`.
 
 Backend covers as-of selection leakage boundaries, matching, metrics (including
 P90 interpolation), time parsing and the API contract; frontend covers the four
 pages and the lib logic.
+
+## Limitations
+
+In this snapshot, WINDFOR is positively biased against FUELHH actuals. The
+alignment checks did not explain the positive monthly bias. Elexon's dataset
+descriptions do not establish that WINDFOR and FUELHH cover the same generation
+basis, so this analysis cannot distinguish forecast bias from a coverage or
+definition mismatch.
 
 ## More documentation
 

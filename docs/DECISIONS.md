@@ -49,8 +49,10 @@ rule is exercised by tests (null-forecast fixture), not by production data.
 Missing forecasts never become 0 and are never interpolated:
 - unmatched points stay in the response with null forecast/error, `matched: false`
 - actuals whose timestamps are absent from every WINDFOR version (e.g. FUELHH
-  half-hours at :30) are shown separately in `actuals_only`; expected timestamps
-  with only post-cutoff versions remain in the denominator
+  half-hours at :30) are shown separately in `actuals_only`
+- an expected timestamp with no forecast available by the cutoff has no `points`
+  row; its actual is not in `actuals_only`, but the timestamp remains in the
+  coverage denominator
 - metrics use matched, non-null pairs only; a day with no matches yields
   n = 0 and null metrics, never NaN
 
@@ -125,8 +127,8 @@ application errors, not data-loading errors.
 
 Vercel is configured with an API service (FastAPI, root `backend/`) and a
 frontend service (Vite, root `frontend/`), with `/api/*` rewrites to the API.
-The audited deployment returned 404 at `/` while `/api/health` worked;
-frontend routing must be verified after the routing configuration is corrected.
+The current deployment serves the frontend at `/`; `/api/health` also returns
+HTTP 200. The frontend route is verified on the live deployment.
 CORS is dev-only (http://localhost:5173). In dev, the frontend proxies `/api`
 to uvicorn on :8000. Docker (Stage 6) provides the portable single-container
 alternative: frontend built in a node stage, served by the Python image with

@@ -137,7 +137,7 @@ def versions(target: datetime, cutoff: datetime) -> dict:
                 "selected": False,
             }
         )
-        if available and (best_pub is None or pub > best_pub):
+        if available and (best_pub is None or pub >= best_pub):
             best_pub = pub
             best_index = len(entries) - 1
     if best_index is not None:

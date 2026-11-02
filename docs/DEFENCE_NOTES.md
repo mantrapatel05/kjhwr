@@ -112,9 +112,8 @@ identical.
 ## Q11. How does the deployment work?
 
 Vercel is configured to build a Vite frontend service and a FastAPI service;
-`/api/*` is rewritten to FastAPI. During this audit the deployed root URL
-returned 404 while `/api/health` returned 200, so a successful frontend
-deployment has not been verified. CORS stays dev-only.
+`/api/*` is rewritten to FastAPI. The live root serves the frontend, and both
+`/` and `/api/health` return HTTP 200. CORS stays dev-only.
 Docker is built and locally tested as the portable single-container alternative:
 a multi-stage Dockerfile at the repo root builds the frontend in a node stage,
 and the python:3.12-slim stage serves the backend plus the built static files

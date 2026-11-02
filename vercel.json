@@ -4,7 +4,7 @@
     "api": {
       "root": "backend",
       "framework": "fastapi",
-      "entrypoint": "app/main.py"
+      "entrypoint": "app.main:app"
     },
     "web": {
       "root": "frontend",

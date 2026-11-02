@@ -1,6 +1,5 @@
-/* Design tokens. Components consume these only.
-   Palette and typography follow the TargetLift design language (own prior project):
-   paper background, ink text, teal accent, mono eyebrows, hairline borders. */
+/* Shared design tokens for the paper background, ink text, teal accent,
+   monospace labels, and thin borders. */
 :root {
   color-scheme: light;
 
@@ -63,7 +62,7 @@
   --lh-head: 1.25;
   --lh-display: 1.02;
 
-  /* Shape: TargetLift uses 5px radii and hairlines, not soft blobs */
+  /* Compact corners and thin borders */
   --radius-control: 5px;
   --radius-surface: 5px;
 

@@ -1,4 +1,4 @@
-/* ---------- Reset and base (TargetLift design language) ---------- */
+/* ---------- Reset and base styles ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -70,7 +70,7 @@ main:focus { outline: none; }
 .nav__link:hover { background: var(--surface-sunken); color: var(--text); }
 .nav__link[aria-current='page'] { background: var(--accent-soft); color: var(--accent); }
 @media (max-width: 899px) {
-  .header-meta { display: none; }  /* TargetLift hides meta first on narrow screens */
+  .header-meta { display: none; }  /* Hide secondary header details on narrow screens */
 }
 
 /* Phones: primary navigation becomes a bottom tab bar (4 items) */
@@ -86,7 +86,7 @@ main:focus { outline: none; }
   .nav__link[aria-current='page'] { background: transparent; box-shadow: inset 0 2px 0 var(--accent); }
 }
 
-/* Page shell + panel system: hairline-gap grid like TargetLift's .workspace */
+/* Page shell and panel system */
 .page {
   max-width: var(--container); margin-inline: auto;
   padding: var(--gutter);
@@ -114,7 +114,7 @@ main:focus { outline: none; }
   .controls, .section { padding: 20px; }
 }
 
-/* Numbered section headings (TargetLift .section-number), zero JSX changes */
+/* Numbered section headings, applied without JSX changes */
 .section > .h2, .panel > .h2, .prose > .h2 {
   display: flex; align-items: center; gap: 12px;
 }
@@ -204,7 +204,7 @@ main:focus { outline: none; }
 .swatch--under { background: var(--series-under); }
 .swatch--bar { background: var(--series-error); }
 
-/* Tooltip: TargetLift signature — ink plate with white mono rows */
+/* Dark tooltip with white monospace rows */
 .tooltip {
   background: var(--ink); color: #fff;
   border: 1px solid var(--ink); border-radius: var(--radius-control);
@@ -264,7 +264,7 @@ main:focus { outline: none; }
 .state__title { font-size: var(--text-md); font-weight: 700; }
 .state__body { color: var(--text-muted); max-width: 34ch; line-height: 1.65; }
 .state__body a { font-family: var(--font-mono); }
-/* error state: TargetLift decision-badge treatment — hardLeft border, flush text */
+/* Error state with a left border and flush text */
 .state--error {
   align-items: flex-start; text-align: left; background: var(--surface);
   border: 0; border-left: 3px solid var(--danger);

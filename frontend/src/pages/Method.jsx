@@ -29,6 +29,8 @@ export default function Method() {
           Each selected forecast is compared with metered wind generation for the same interval start time.
           An interval missing either value is excluded from the metrics and is never treated as zero.
           Coverage reports how many expected intervals were matched.
+          Expected intervals with no forecast available by the cutoff count in the coverage denominator,
+          but are not emitted in the points table or actuals-only list.
         </p>
 
         <h2 className="h2">Error and sign</h2>
