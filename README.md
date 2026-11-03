@@ -139,6 +139,11 @@ Backend covers as-of selection leakage boundaries, matching, metrics (including
 P90 interpolation), time parsing and the API contract; frontend covers the four
 pages and the lib logic.
 
+## Diagrams
+
+- [System architecture](docs/diagrams/architecture.png)
+- [As-of forecast selection](docs/diagrams/as-of-selection.png)
+
 ## Limitations
 
 In this snapshot, WINDFOR is positively biased against FUELHH actuals. The
